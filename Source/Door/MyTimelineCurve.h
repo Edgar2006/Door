@@ -57,7 +57,7 @@ private:
 		USceneComponent* _RootComponent;
 	UPROPERTY(EditAnywhere)
 		UStaticMeshComponent* LightSwitchMesh;
-	bool bIsOn = true;
+	bool bIsOn = false;
 	UPROPERTY(EditAnywhere)
 		UWidgetComponent* InteractionWidget;
 

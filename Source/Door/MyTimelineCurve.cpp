@@ -25,14 +25,6 @@ AMyTimelineCurve::AMyTimelineCurve()
 
 void AMyTimelineCurve::TimelineProgress(float Value)
 {
-	if (Value < 0.1)
-	{
-		bIsOn = true;
-	}
-	else
-	{
-		bIsOn = false;
-	}
 	FRotator NewLocation = FMath::Lerp(StartLoc, EndLoc, Value);
 	SetActorRotation(NewLocation);
 }
@@ -51,6 +43,7 @@ void AMyTimelineCurve::BeginPlay()
 		StartLoc = EndLoc = GetActorRotation();
 		EndLoc.Yaw += ZOffset;
 		//CurveTimeline.PlayFromStart();
+		bIsOn = false;
 	}
 }
 
@@ -73,6 +66,7 @@ void AMyTimelineCurve::InteractWithMe()
 	else {
 		//Light->SetIntensity(10000);
 		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "End!!!!");
+		//CurveTimeline.Pla()
 
 
 		bIsOn = true;
@@ -89,19 +83,5 @@ void AMyTimelineCurve::HideInteractionWidget()
 	InteractionWidget->SetVisibility(false);
 }
 
-//void AMyTimelineCurve::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-//{
-//	if (IfDoorOpenAnimationDone)
-//	{
-//		IfDoorOpenAnimationDone = false;
-//		CurveTimeline.PlayFromStart();
-//	}
-//	GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Green, "Begin");
-//}
-//
-//void AMyTimelineCurve::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-//{
-//	GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "End!!!!");
-//
-//}
+
 

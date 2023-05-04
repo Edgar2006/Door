@@ -40,9 +40,9 @@ ADoorCharacter::ADoorCharacter()
 	InteractionBox->SetBoxExtent(FVector(120, 32, 32));
 	InteractionBox->SetupAttachment(FirstPersonCameraComponent);
 
-	//FVector CurrentLocation = InteractionBox->GetRelativeTransform().GetLocation();
-	//CurrentLocation.X += 20;
-	//InteractionBox->GetRelativeTransform().SetLocation(CurrentLocation);
+	FVector CurrentLocation = InteractionBox->GetRelativeTransform().GetLocation();
+	CurrentLocation.X += 100;
+	InteractionBox->GetRelativeTransform().SetLocation(CurrentLocation);
 
 }
 
