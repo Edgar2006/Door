@@ -31,9 +31,12 @@ protected:
 	virtual void BeginPlay() override;
 
 
-	FTimeline CurveTimeline;
+	FTimeline CurveTimelineOpen;
+	FTimeline CurveTimelineClose;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
-		UCurveFloat* CurveFloat;
+		UCurveFloat* CurveFloatOpen;
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+		UCurveFloat* CurveFloatClose;
 	UPROPERTY()
 		FRotator StartLoc;
 	UPROPERTY()

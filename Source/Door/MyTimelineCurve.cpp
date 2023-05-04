@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "MyTimelineCurve.h"
 #include "Components/BoxComponent.h"
@@ -36,22 +34,26 @@ void AMyTimelineCurve::BeginPlay()
 	Super::BeginPlay();
 
 
-	if (CurveFloat) {
+	if (CurveFloatOpen && CurveFloatClose) {
 		FOnTimelineFloat TimelineProgress;
 		TimelineProgress.BindUFunction(this, FName("TimelineProgress"));
-		CurveTimeline.AddInterpFloat(CurveFloat, TimelineProgress);
+		CurveTimelineOpen.AddInterpFloat(CurveFloatOpen, TimelineProgress);
+		CurveTimelineClose.AddInterpFloat(CurveFloatClose, TimelineProgress);
 		StartLoc = EndLoc = GetActorRotation();
 		EndLoc.Yaw += ZOffset;
-		//CurveTimeline.PlayFromStart();
-		bIsOn = false;
+		bIsOn = true;
 	}
+	InteractionWidget->SetVisibility(false);
+
 }
 
 // Called every frame
 void AMyTimelineCurve::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	CurveTimeline.TickTimeline(DeltaTime);
+	CurveTimelineOpen.TickTimeline(DeltaTime);
+	CurveTimelineClose.TickTimeline(DeltaTime);
+
 }
 
 void AMyTimelineCurve::InteractWithMe()
@@ -59,14 +61,14 @@ void AMyTimelineCurve::InteractWithMe()
 	UE_LOG(LogTemp, Warning, TEXT("You have interactive with me"));
 	if (bIsOn) {
 		//Light->SetIntensity(0);
-		CurveTimeline.PlayFromStart();
+		CurveTimelineOpen.PlayFromStart();
 		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Green, "Begin");
 		bIsOn = false;
 	}
 	else {
 		//Light->SetIntensity(10000);
 		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "End!!!!");
-		//CurveTimeline.Pla()
+		CurveTimelineClose.PlayFromStart();
 
 
 		bIsOn = true;
