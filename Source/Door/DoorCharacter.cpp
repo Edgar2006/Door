@@ -7,7 +7,8 @@
 #include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-
+#include "Engine/Engine.h"
+#include <Net/UnrealNetwork.h>
 
 //////////////////////////////////////////////////////////////////////////
 // ADoorCharacter
@@ -88,9 +89,6 @@ void ADoorCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 
 void ADoorCharacter::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("This is an on screen message!"));
-
-
 	TArray<AActor*>OvelrappingActors;
 	InteractionBox->GetOverlappingActors(OvelrappingActors);
 	AActor* ClosestActor = OvelrappingActors[0];
@@ -161,6 +159,23 @@ bool ADoorCharacter::GetHasRifle()
 
 void ADoorCharacter::OnInteract() {
 	if (Interface) {
-		Interface->InteractWithMe();
+		if (HasAuthority()) {
+			Interface->InteractWithMe();
+		}
+		else {
+			// call to server
+			Server_Interact();
+		}
 	}
+}
+
+bool ADoorCharacter::Server_Interact_Validate()
+{
+	return true;
+}
+
+
+void ADoorCharacter::Server_Interact_Implementation()
+{
+	ADoorCharacter::OnInteract();
 }

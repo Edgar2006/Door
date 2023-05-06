@@ -43,26 +43,30 @@ protected:
 		FRotator EndLoc;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		float ZOffset;
+	UPROPERTY(EditAnywhere)
+		USceneComponent* _RootComponent;
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* LightSwitchMesh;
+	UPROPERTY(EditAnywhere)
+		UWidgetComponent* InteractionWidget;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ServerVariableTrueOrFasle)
+		bool bIsOn;
+	UFUNCTION()
+		void OnRep_ServerVariableTrueOrFasle();
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 
 
 public:
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;	
 
 	virtual void InteractWithMe() override;
 	virtual void ShowInteractionWidget() override;
 	virtual void HideInteractionWidget() override;
 
 
-
-private:
-	UPROPERTY(EditAnywhere)
-		USceneComponent* _RootComponent;
-	UPROPERTY(EditAnywhere)
-		UStaticMeshComponent* LightSwitchMesh;
-	bool bIsOn = false;
-	UPROPERTY(EditAnywhere)
-		UWidgetComponent* InteractionWidget;
 
 
 };

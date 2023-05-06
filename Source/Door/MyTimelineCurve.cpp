@@ -2,6 +2,7 @@
 #include "MyTimelineCurve.h"
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
+#include <Net/UnrealNetwork.h>
 
 // Sets default values
 
@@ -18,6 +19,7 @@ AMyTimelineCurve::AMyTimelineCurve()
 	InteractionWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction widget"));
 	InteractionWidget->SetupAttachment(RootComponent);
 
+	bReplicates = true;
 
 }
 
@@ -33,7 +35,7 @@ void AMyTimelineCurve::BeginPlay()
 {
 	Super::BeginPlay();
 
-
+	bIsOn = false;
 	if (CurveFloatOpen && CurveFloatClose) {
 		FOnTimelineFloat TimelineProgress;
 		TimelineProgress.BindUFunction(this, FName("TimelineProgress"));
@@ -41,11 +43,12 @@ void AMyTimelineCurve::BeginPlay()
 		CurveTimelineClose.AddInterpFloat(CurveFloatClose, TimelineProgress);
 		StartLoc = EndLoc = GetActorRotation();
 		EndLoc.Yaw += ZOffset;
-		bIsOn = true;
 	}
 	InteractionWidget->SetVisibility(false);
 
 }
+
+
 
 // Called every frame
 void AMyTimelineCurve::Tick(float DeltaTime)
@@ -56,23 +59,35 @@ void AMyTimelineCurve::Tick(float DeltaTime)
 
 }
 
-void AMyTimelineCurve::InteractWithMe()
+
+void AMyTimelineCurve::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	UE_LOG(LogTemp, Warning, TEXT("You have interactive with me"));
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMyTimelineCurve, bIsOn);
+}
+
+void AMyTimelineCurve::OnRep_ServerVariableTrueOrFasle()
+{
 	if (bIsOn) {
 		//Light->SetIntensity(0);
 		CurveTimelineOpen.PlayFromStart();
 		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Green, "Begin");
-		bIsOn = false;
 	}
 	else {
 		//Light->SetIntensity(10000);
 		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "End!!!!");
 		CurveTimelineClose.PlayFromStart();
-
-
-		bIsOn = true;
 	}
+}
+
+
+void AMyTimelineCurve::InteractWithMe()
+{
+	//if (HasAuthority()) {
+		bIsOn = !bIsOn;
+		OnRep_ServerVariableTrueOrFasle();
+	//}
 }
 
 void AMyTimelineCurve::ShowInteractionWidget()

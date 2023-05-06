@@ -2,11 +2,14 @@
 
 #pragma once
 
+
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "InteractionInterface.h"
 #include <Components/BoxComponent.h>
+#include "Engine/Engine.h"
+#include <Net/UnrealNetwork.h>
 #include "DoorCharacter.generated.h"
 
 class UInputComponent;
@@ -93,6 +96,10 @@ private:
 	IInteractionInterface* SecondInterface = nullptr;
 
 	void OnInteract();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+		void Server_Interact();
+
 
 	UFUNCTION()
 		void OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
