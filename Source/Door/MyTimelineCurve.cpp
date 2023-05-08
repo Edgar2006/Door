@@ -26,7 +26,8 @@ AMyTimelineCurve::AMyTimelineCurve()
 void AMyTimelineCurve::TimelineProgress(float Value)
 {
 	FRotator NewLocation = FMath::Lerp(StartLoc, EndLoc, Value);
-	SetActorRotation(NewLocation);
+	LightSwitchMesh->SetWorldRotation(NewLocation);
+	//SetActorRotation(NewLocation);
 }
 
 
