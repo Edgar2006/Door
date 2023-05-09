@@ -1,4 +1,4 @@
-
+﻿
 #include "MyTimelineCurve.h"
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
@@ -14,21 +14,35 @@ AMyTimelineCurve::AMyTimelineCurve()
 
 	_RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root component"));
 	RootComponent = _RootComponent;
-	LightSwitchMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Light switch mesh"));
-	LightSwitchMesh->SetupAttachment(RootComponent);
+	ElvatorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Elevator mesh"));
+	ElvatorMesh->SetupAttachment(RootComponent);
+	ElvatorDoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Elevator door mesh"));
+	ElvatorDoorMesh->SetupAttachment(ElvatorMesh);
 	InteractionWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction widget"));
 	InteractionWidget->SetupAttachment(RootComponent);
-
+	ElvetorPosition = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	ElvetorPosition->SetupAttachment(ElvatorMesh);
 	bReplicates = true;
 
 }
 
-void AMyTimelineCurve::TimelineProgress(float Value)
+void AMyTimelineCurve::TimelineProgressDoor(float Value)
 {
-	FRotator NewLocation = FMath::Lerp(StartLoc, EndLoc, Value);
-	LightSwitchMesh->SetWorldRotation(NewLocation);
-	//SetActorRotation(NewLocation);
+	FRotator NewLocation = FMath::Lerp(StartLocDoorOpening, EndLocDoorOpening, Value);
+	ElvatorDoorMesh->SetWorldRotation(NewLocation);
 }
+
+void AMyTimelineCurve::TimelineProgress_Up_Down(float Value)
+{
+	FVector NewLocation = FMath::Lerp(StartLocElvator, EndLocElvator, Value);
+	FString a = FString::SanitizeFloat(NewLocation.Z);
+	ElvatorMesh->SetWorldLocation(NewLocation);
+
+	if (Value == 1) {
+		Swap(StartLocElvator, EndLocElvator);
+	}
+}
+
 
 
 // Called when the game starts or when spawned
@@ -38,12 +52,15 @@ void AMyTimelineCurve::BeginPlay()
 
 	bIsOn = false;
 	if (CurveFloatOpen && CurveFloatClose) {
-		FOnTimelineFloat TimelineProgress;
-		TimelineProgress.BindUFunction(this, FName("TimelineProgress"));
-		CurveTimelineOpen.AddInterpFloat(CurveFloatOpen, TimelineProgress);
-		CurveTimelineClose.AddInterpFloat(CurveFloatClose, TimelineProgress);
-		StartLoc = EndLoc = GetActorRotation();
-		EndLoc.Yaw += ZOffset;
+		FOnTimelineFloat TimelineProgressDoor, TimelineProgress_Up_Down;
+		TimelineProgressDoor.BindUFunction(this, FName("TimelineProgressDoor"));
+		CurveTimelineOpen.AddInterpFloat(CurveFloatOpen, TimelineProgressDoor);
+		CurveTimelineClose.AddInterpFloat(CurveFloatClose, TimelineProgressDoor);
+		TimelineProgress_Up_Down.BindUFunction(this, FName("TimelineProgress_Up_Down"));
+		CurveTimelineElvator.AddInterpFloat(CurveFloatOpen, TimelineProgress_Up_Down);
+		StartLocDoorOpening = EndLocDoorOpening = GetActorRotation();
+		EndLocDoorOpening.Yaw += ZOffset;
+		StartLocElvator = EndLocElvator = ElvetorPosition->GetComponentLocation();
 	}
 	InteractionWidget->SetVisibility(false);
 
@@ -57,7 +74,7 @@ void AMyTimelineCurve::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	CurveTimelineOpen.TickTimeline(DeltaTime);
 	CurveTimelineClose.TickTimeline(DeltaTime);
-
+	CurveTimelineElvator.TickTimeline(DeltaTime);
 }
 
 
@@ -68,16 +85,30 @@ void AMyTimelineCurve::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AMyTimelineCurve, bIsOn);
 }
 
+void AMyTimelineCurve::CheckIfOpenDoor()
+{
+	FString a = FString::SanitizeFloat(StartLocElvator.Z);
+	FString b = FString::SanitizeFloat(EndLocElvator.Z);
+
+	GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, a + "_______" + b);
+	if (FMath::Abs(StartLocElvator.Z - EndLocElvator.Z) < 200) {
+		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "doorOpen");
+		InteractWithMe();
+	}
+	else {
+		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "Elevator");
+		CurveTimelineElvator.PlayFromStart();
+	}
+}
+
 void AMyTimelineCurve::OnRep_ServerVariableTrueOrFasle()
 {
 	if (bIsOn) {
 		//Light->SetIntensity(0);
 		CurveTimelineOpen.PlayFromStart();
-		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Green, "Begin");
 	}
 	else {
 		//Light->SetIntensity(10000);
-		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "End!!!!");
 		CurveTimelineClose.PlayFromStart();
 	}
 }
@@ -86,9 +117,16 @@ void AMyTimelineCurve::OnRep_ServerVariableTrueOrFasle()
 void AMyTimelineCurve::InteractWithMe()
 {
 	//if (HasAuthority()) {
+		
 		bIsOn = !bIsOn;
 		OnRep_ServerVariableTrueOrFasle();
 	//}
+}
+
+void AMyTimelineCurve::InteractSetSwichObjectPossiton(float z)
+{
+	EndLocElvator.Z = z-200;
+	CheckIfOpenDoor();
 }
 
 void AMyTimelineCurve::ShowInteractionWidget()

@@ -89,23 +89,24 @@ void ADoorCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 
 void ADoorCharacter::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	TArray<AActor*>OvelrappingActors;
-	InteractionBox->GetOverlappingActors(OvelrappingActors);
-	AActor* ClosestActor = OvelrappingActors[0];
+	//TArray<AActor*>OvelrappingActors;
+	//InteractionBox->GetOverlappingActors(OvelrappingActors);
+	//AActor* ClosestActor = OvelrappingActors[0];
 
-	for (auto CurrentActor : OvelrappingActors)
-	{
-		if (GetDistanceTo(CurrentActor) < GetDistanceTo(ClosestActor))
-		{
-			ClosestActor = CurrentActor;
-		}
-	}
+	//for (auto CurrentActor : OvelrappingActors)
+	//{
+	//	if (GetDistanceTo(CurrentActor) < GetDistanceTo(ClosestActor))
+	//	{
+	//		ClosestActor = CurrentActor;
+	//	}
+	//}
 	if (Interface) {
 		Interface->HideInteractionWidget();
 	}
-
-	Interface = Cast<IInteractionInterface>(ClosestActor);
+	
+	Interface = Cast<IInteractionInterface>(OtherActor);
 	if (Interface) {
+		ZPositionElvatorDoorMesh = OtherComp->GetComponentLocation().Z;
 		Interface->ShowInteractionWidget();
 	}
 
@@ -160,7 +161,8 @@ bool ADoorCharacter::GetHasRifle()
 void ADoorCharacter::OnInteract() {
 	if (Interface) {
 		if (HasAuthority()) {
-			Interface->InteractWithMe();
+			Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh);
+			//Interface->InteractWithMe();
 		}
 		else {
 			// call to server

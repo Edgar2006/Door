@@ -23,14 +23,16 @@ public:
 	AMyTimelineCurve();
 
 	UFUNCTION()
-		void TimelineProgress(float Value);
+		void TimelineProgressDoor(float Value);
+	UFUNCTION()
+		void TimelineProgress_Up_Down(float Value);
 
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-
+	FTimeline CurveTimelineElvator;
 	FTimeline CurveTimelineOpen;
 	FTimeline CurveTimelineClose;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
@@ -38,15 +40,23 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		UCurveFloat* CurveFloatClose;
 	UPROPERTY()
-		FRotator StartLoc;
+		FRotator StartLocDoorOpening;
 	UPROPERTY()
-		FRotator EndLoc;
+		FRotator EndLocDoorOpening;
+	UPROPERTY()
+		FVector StartLocElvator;
+	UPROPERTY()
+		FVector EndLocElvator;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		float ZOffset;
 	UPROPERTY(EditAnywhere)
 		USceneComponent* _RootComponent;
 	UPROPERTY(EditAnywhere)
-		UStaticMeshComponent* LightSwitchMesh;
+		USceneComponent* ElvetorPosition;
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* ElvatorDoorMesh;
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* ElvatorMesh;
 	UPROPERTY(EditAnywhere)
 		UWidgetComponent* InteractionWidget;
 
@@ -56,6 +66,10 @@ protected:
 		void OnRep_ServerVariableTrueOrFasle();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION()
+		void CheckIfOpenDoor();
+		
+
 
 
 public:
@@ -63,6 +77,7 @@ public:
 	virtual void Tick(float DeltaTime) override;	
 
 	virtual void InteractWithMe() override;
+	virtual void InteractSetSwichObjectPossiton(float Z) override;
 	virtual void ShowInteractionWidget() override;
 	virtual void HideInteractionWidget() override;
 

@@ -9,6 +9,10 @@ void IInteractionInterface::InteractWithMe()
 {
 }
 
+void IInteractionInterface::InteractSetSwichObjectPossiton(float z)
+{
+}
+
 void IInteractionInterface::ShowInteractionWidget()
 {
 }

@@ -90,11 +90,14 @@ public:
 private:
 	UPROPERTY(EditAnywhere)
 		UBoxComponent* InteractionBox;
-
+	//UPROPERTY()
 	IInteractionInterface* Interface = nullptr;
 
-	IInteractionInterface* SecondInterface = nullptr;
+	UPROPERTY(EditAnywhere)
+	float ZPositionElvatorDoorMesh;
 
+	IInteractionInterface* SecondInterface = nullptr;
+	
 	void OnInteract();
 
 	UFUNCTION(Server, Reliable, WithValidation)
