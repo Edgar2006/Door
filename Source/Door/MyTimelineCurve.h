@@ -26,7 +26,10 @@ public:
 		void TimelineProgressDoor(float Value);
 	UFUNCTION()
 		void TimelineProgress_Up_Down(float Value);
-
+	UFUNCTION()
+		void TimelineProgressDoorFinishedCallback();
+	UFUNCTION()
+		void TimelineProgress_Up_DownFinishedCallback();
 
 protected:
 	// Called when the game starts or when spawned
@@ -34,7 +37,6 @@ protected:
 
 	FTimeline CurveTimelineElvator;
 	FTimeline CurveTimelineOpen;
-	FTimeline CurveTimelineClose;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		UCurveFloat* CurveFloatOpen;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
@@ -60,14 +62,16 @@ protected:
 	UPROPERTY(EditAnywhere)
 		UWidgetComponent* InteractionWidget;
 
-	UPROPERTY(ReplicatedUsing = OnRep_ServerVariableTrueOrFasle)
-		bool bIsOn;
+	UPROPERTY(ReplicatedUsing = OnRep_ServerOpenDoor)
+		bool BoolOpenDoor;
+	UPROPERTY(ReplicatedUsing = OnRep_ServerElvetor)
+		bool AnimationDoneCheck;
 	UFUNCTION()
-		void OnRep_ServerVariableTrueOrFasle();
+		void OnRep_ServerOpenDoor();
+	UFUNCTION()
+		void OnRep_ServerElvetor();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UFUNCTION()
-		void CheckIfOpenDoor();
 		
 
 

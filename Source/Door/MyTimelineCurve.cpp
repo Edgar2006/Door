@@ -10,8 +10,6 @@ AMyTimelineCurve::AMyTimelineCurve()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-
 	_RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root component"));
 	RootComponent = _RootComponent;
 	ElvatorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Elevator mesh"));
@@ -29,105 +27,138 @@ AMyTimelineCurve::AMyTimelineCurve()
 void AMyTimelineCurve::TimelineProgressDoor(float Value)
 {
 	FRotator NewLocation = FMath::Lerp(StartLocDoorOpening, EndLocDoorOpening, Value);
-	ElvatorDoorMesh->SetWorldRotation(NewLocation);
+	ElvatorDoorMesh->SetRelativeRotation(NewLocation);
 }
-
 void AMyTimelineCurve::TimelineProgress_Up_Down(float Value)
 {
 	FVector NewLocation = FMath::Lerp(StartLocElvator, EndLocElvator, Value);
 	FString a = FString::SanitizeFloat(NewLocation.Z);
 	ElvatorMesh->SetWorldLocation(NewLocation);
+}
 
-	if (Value == 1) {
-		Swap(StartLocElvator, EndLocElvator);
+void AMyTimelineCurve::TimelineProgressDoorFinishedCallback()
+{
+	if (AnimationDoneCheck) {
+		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "qwertyui");
+		AnimationDoneCheck = false;
+		CurveTimelineElvator.PlayFromStart();
 	}
+	else {
+		AnimationDoneCheck = true;
+	}
+}
+
+void AMyTimelineCurve::TimelineProgress_Up_DownFinishedCallback()
+{
+	Swap(StartLocElvator, EndLocElvator);
+	AnimationDoneCheck = false;
+	InteractWithMe();
 }
 
 
 
-// Called when the game starts or when spawned
 void AMyTimelineCurve::BeginPlay()
 {
 	Super::BeginPlay();
 
-	bIsOn = false;
+	BoolOpenDoor = false;
+	AnimationDoneCheck = true;
 	if (CurveFloatOpen && CurveFloatClose) {
 		FOnTimelineFloat TimelineProgressDoor, TimelineProgress_Up_Down;
+		FOnTimelineEventStatic TimelineProgressDoorFinishedCallback, TimelineProgress_Up_DownFinishedCallback;
+
 		TimelineProgressDoor.BindUFunction(this, FName("TimelineProgressDoor"));
+		TimelineProgressDoorFinishedCallback.BindUFunction(this, FName{ TEXT("TimelineProgressDoorFinishedCallback") });
 		CurveTimelineOpen.AddInterpFloat(CurveFloatOpen, TimelineProgressDoor);
-		CurveTimelineClose.AddInterpFloat(CurveFloatClose, TimelineProgressDoor);
+		CurveTimelineOpen.SetTimelineFinishedFunc(TimelineProgressDoorFinishedCallback);
+
 		TimelineProgress_Up_Down.BindUFunction(this, FName("TimelineProgress_Up_Down"));
+		TimelineProgress_Up_DownFinishedCallback.BindUFunction(this, FName{ TEXT("TimelineProgress_Up_DownFinishedCallback") });
 		CurveTimelineElvator.AddInterpFloat(CurveFloatOpen, TimelineProgress_Up_Down);
+		CurveTimelineElvator.SetTimelineFinishedFunc(TimelineProgress_Up_DownFinishedCallback);
+
 		StartLocDoorOpening = EndLocDoorOpening = GetActorRotation();
 		EndLocDoorOpening.Yaw += ZOffset;
 		StartLocElvator = EndLocElvator = ElvetorPosition->GetComponentLocation();
 	}
 	InteractionWidget->SetVisibility(false);
-
 }
-
-
-
-// Called every frame
 void AMyTimelineCurve::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	CurveTimelineOpen.TickTimeline(DeltaTime);
-	CurveTimelineClose.TickTimeline(DeltaTime);
 	CurveTimelineElvator.TickTimeline(DeltaTime);
 }
-
-
 void AMyTimelineCurve::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AMyTimelineCurve, bIsOn);
+	DOREPLIFETIME(AMyTimelineCurve, BoolOpenDoor);
+	DOREPLIFETIME(AMyTimelineCurve, AnimationDoneCheck);
+
 }
 
-void AMyTimelineCurve::CheckIfOpenDoor()
-{
-	FString a = FString::SanitizeFloat(StartLocElvator.Z);
-	FString b = FString::SanitizeFloat(EndLocElvator.Z);
 
-	GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, a + "_______" + b);
-	if (FMath::Abs(StartLocElvator.Z - EndLocElvator.Z) < 200) {
-		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "doorOpen");
-		InteractWithMe();
-	}
-	else {
-		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, "Elevator");
-		CurveTimelineElvator.PlayFromStart();
-	}
-}
-
-void AMyTimelineCurve::OnRep_ServerVariableTrueOrFasle()
+void AMyTimelineCurve::OnRep_ServerOpenDoor()
 {
-	if (bIsOn) {
-		//Light->SetIntensity(0);
+	if (BoolOpenDoor) {
 		CurveTimelineOpen.PlayFromStart();
 	}
 	else {
-		//Light->SetIntensity(10000);
-		CurveTimelineClose.PlayFromStart();
+		CurveTimelineOpen.Reverse();
+	}
+}
+void AMyTimelineCurve::InteractWithMe()
+{
+	BoolOpenDoor = !BoolOpenDoor;
+	OnRep_ServerOpenDoor();
+}
+
+void AMyTimelineCurve::OnRep_ServerElvetor()
+{
+	if (!AnimationDoneCheck) {
+		InteractWithMe();
+	}
+	else {
+		if (BoolOpenDoor) {
+			InteractWithMe();
+		}
+		else {
+			CurveTimelineElvator.PlayFromStart();
+		}
 	}
 }
 
 
-void AMyTimelineCurve::InteractWithMe()
-{
-	//if (HasAuthority()) {
-		
-		bIsOn = !bIsOn;
-		OnRep_ServerVariableTrueOrFasle();
-	//}
-}
 
 void AMyTimelineCurve::InteractSetSwichObjectPossiton(float z)
 {
 	EndLocElvator.Z = z-200;
-	CheckIfOpenDoor();
+	if (FMath::Abs(StartLocElvator.Z - EndLocElvator.Z) < 200) {
+		AnimationDoneCheck = false;
+	}
+	else {
+		if (BoolOpenDoor) {
+			AnimationDoneCheck = true;
+		}
+		else {
+			AnimationDoneCheck = true;
+		}
+	}
+	OnRep_ServerElvetor();
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 void AMyTimelineCurve::ShowInteractionWidget()
 {
