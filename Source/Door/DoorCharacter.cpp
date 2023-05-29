@@ -15,7 +15,7 @@
 
 ADoorCharacter::ADoorCharacter()
 {
-	// Character doesnt have a rifle at start
+	// Character doesnt have a rifle at start	
 	bHasRifle = false;
 
 	// Set size for collision capsule
@@ -28,7 +28,7 @@ ADoorCharacter::ADoorCharacter()
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
 	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
-	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
+	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh"));
 	Mesh1P->SetOnlyOwnerSee(true);
 	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
 	Mesh1P->bCastDynamicShadow = false;
@@ -44,7 +44,10 @@ ADoorCharacter::ADoorCharacter()
 	FVector CurrentLocation = InteractionBox->GetRelativeTransform().GetLocation();
 	CurrentLocation.X += 100;
 	InteractionBox->GetRelativeTransform().SetLocation(CurrentLocation);
-
+	MaterialOne = CreateDefaultSubobject<UMaterialInterface>("MaterialOne");
+	MaterialTwo = CreateDefaultSubobject<UMaterialInterface>("MaterialTwo");
+	MaterialThree = CreateDefaultSubobject<UMaterialInterface>("MaterialThree");
+	MaterialThree = CreateDefaultSubobject<UMaterialInterface>("MaterialFour");
 }
 
 void ADoorCharacter::BeginPlay()
@@ -65,9 +68,6 @@ void ADoorCharacter::BeginPlay()
 	InteractionBox->OnComponentBeginOverlap.AddDynamic(this, &ADoorCharacter::OnBoxBeginOverlap);
 	InteractionBox->OnComponentEndOverlap.AddDynamic(this, &ADoorCharacter::OnBoxOverlapEnd);
 }
-
-//////////////////////////////////////////////////////////////////////////// Input
-
 void ADoorCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
@@ -87,19 +87,63 @@ void ADoorCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ADoorCharacter::OnInteract);
 }
 
+
+void ADoorCharacter::Move(const FInputActionValue& Value)
+{
+	// input is a Vector2D
+	FVector2D MovementVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		// add movement 
+		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
+		AddMovementInput(GetActorRightVector(), MovementVector.X);
+	}
+}
+void ADoorCharacter::Look(const FInputActionValue& Value)
+{
+	// input is a Vector2D
+	FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		// add yaw and pitch input to controller
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+void ADoorCharacter::SetHasRifle(bool bNewHasRifle)
+{
+	bHasRifle = bNewHasRifle;
+}
+bool ADoorCharacter::GetHasRifle()
+{
+	return bHasRifle;
+}
+
+
+
+
 void ADoorCharacter::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//TArray<AActor*>OvelrappingActors;
-	//InteractionBox->GetOverlappingActors(OvelrappingActors);
-	//AActor* ClosestActor = OvelrappingActors[0];
-
-	//for (auto CurrentActor : OvelrappingActors)
-	//{
-	//	if (GetDistanceTo(CurrentActor) < GetDistanceTo(ClosestActor))
-	//	{
-	//		ClosestActor = CurrentActor;
+	//TArray<UPrimitiveComponent*> AllComponent;
+	//OverlappedComponent->GetOverlappingComponents(AllComponent);
+	//UPrimitiveComponent* min = AllComponent[0];
+	//for (UPrimitiveComponent* i : AllComponent) {
+	//	if ((min->GetRelativeLocation() - OverlappedComponent->GetRelativeLocation()).Size() < (i->GetRelativeLocation() - OverlappedComponent->GetRelativeLocation()).Size()) {
+	//		min = i;
 	//	}
 	//}
+	//OtherComp = min;
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, OtherComp->GetName());
+	ElevatorButtonComponent = OtherComp;
+	if (OtherComp->GetMaterial(0) == MaterialThree) {
+		OtherComp->SetMaterial(0, MaterialFour);
+	}
+	else {
+		OtherComp->SetMaterial(0, MaterialOne);
+		bChooseOne = !bChooseOne;
+	}
 	if (Interface) {
 		Interface->HideInteractionWidget();
 	}
@@ -114,69 +158,91 @@ void ADoorCharacter::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 
 void ADoorCharacter::OnBoxOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+	if (OtherComp->GetMaterial(0) == MaterialOne) {
+		OtherComp->SetMaterial(0, MaterialTwo);
+		bChooseOne = !bChooseOne;
+	}
+	if (OtherComp->GetMaterial(0) == MaterialFour) {
+		OtherComp->SetMaterial(0, MaterialThree);
+	}
 	if (Interface) {
 		Interface->HideInteractionWidget();
 		Interface = nullptr;
 	}
 }
 
-
-void ADoorCharacter::Move(const FInputActionValue& Value)
+bool ADoorCharacter::CheckIfElevatorButtonComponent(FString v)
 {
-	// input is a Vector2D
-	FVector2D MovementVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
-	{
-		// add movement 
-		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
-		AddMovementInput(GetActorRightVector(), MovementVector.X);
+	bool b = 0;
+	for (int i = 0; i < v.Len(); i++) {
+		if (v[i] - '0' < 0 || v[i] - '0' > 9) {
+			return false;
+		}
 	}
+	return true;
 }
 
-void ADoorCharacter::Look(const FInputActionValue& Value)
+void ADoorCharacter::Interact()
 {
-	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
-	{
-		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+	if (HasAuthority()) {
+		if (CheckIfElevatorButtonComponent(ElevatorButtonComponent->GetName())) {
+			ZPositionElvatorDoorMesh = FCString::Atoi(*ElevatorButtonComponent->GetName()) * 100;
+		}
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, ElevatorButtonComponent->GetName());
+		Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh);
+		if (ElevatorButtonComponent->GetMaterial(0) == MaterialFour) {
+			ElevatorButtonComponent->SetMaterial(0, MaterialTwo);
+		}	
+		else {
+			ElevatorButtonComponent->SetMaterial(0, MaterialThree);
+		}
 	}
-}
-
-void ADoorCharacter::SetHasRifle(bool bNewHasRifle)
-{
-	bHasRifle = bNewHasRifle;
-}
-
-bool ADoorCharacter::GetHasRifle()
-{
-	return bHasRifle;
+	else {
+		// call to server
+		Server_Interact();
+	}
 }
 
 
 void ADoorCharacter::OnInteract() {
 	if (Interface) {
-		if (HasAuthority()) {
-			Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh);
-			//Interface->InteractWithMe();
-		}
-		else {
-			// call to server
-			Server_Interact();
+		Interact();
+	}
+	else {
+		float LengthOfTrace = 100.f;
+
+		FVector StartLocation;
+		FVector EndLocation;
+		
+		StartLocation = FirstPersonCameraComponent->GetComponentLocation();
+
+		EndLocation = StartLocation +
+			(FirstPersonCameraComponent->GetForwardVector() * LengthOfTrace);
+
+		FHitResult OutHitResult;
+		FCollisionQueryParams LineTraceParams;
+		LineTraceParams.AddIgnoredActor(this);
+		DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Green, false, 1, 0, 1);
+
+		bool bHitSomething = GetWorld()->LineTraceSingleByChannel(OutHitResult,StartLocation, EndLocation, ECC_Visibility, LineTraceParams);
+		if (bHitSomething)
+		{
+			Interface = Cast<IInteractionInterface>(OutHitResult.GetActor());
+			if (Interface)
+			{
+				ElevatorButtonComponent = OutHitResult.GetComponent();
+				Interact();
+			}
 		}
 	}
 }
+
+
 
 bool ADoorCharacter::Server_Interact_Validate()
 {
 	return true;
 }
-
-
 void ADoorCharacter::Server_Interact_Implementation()
 {
 	ADoorCharacter::OnInteract();

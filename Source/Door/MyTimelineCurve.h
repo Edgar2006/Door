@@ -37,6 +37,9 @@ protected:
 
 	FTimeline CurveTimelineElvator;
 	FTimeline CurveTimelineOpen;
+	FKeyHandle first;
+	FKeyHandle second;
+
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		UCurveFloat* CurveFloatOpen;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
@@ -66,6 +69,8 @@ protected:
 		bool BoolOpenDoor;
 	UPROPERTY(ReplicatedUsing = OnRep_ServerElvetor)
 		bool AnimationDoneCheck;
+	UPROPERTY(ReplicatedUsing = OnRep_ServerElvetor)
+		bool NextCustBool;
 	UFUNCTION()
 		void OnRep_ServerOpenDoor();
 	UFUNCTION()
@@ -76,15 +81,54 @@ protected:
 
 
 
+
+
+	UFUNCTION()
+		void Outside();
+	UFUNCTION()
+		void Inside();
+
+
+
+	/*The static mesh of our actor*/
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* SM_Outside;
+
+
+	/*The static mesh of our actor*/
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* v;
+
+
+	/*The random location of our component will get generated based on
+	a given X and Y from within our editor.*/
+
+	/*The max x of the location vector that the static mesh will be spawned*/
+	UPROPERTY(EditAnywhere, Category = "Construction")
+		float XThreshold;
+
+	/*The max y of the location vector that the static mesh will be spawned*/
+	UPROPERTY(EditAnywhere, Category = "Construction")
+		float YThreshold;
+
+	/*The number of meshes/components that will get spawned*/
+	UPROPERTY(EditAnywhere, Category = "Construction")
+		int32 NumToSpawn;	
+
+	/*An array containing references of the spawned components
+	This will be used in order to delete old components in case we decide to
+	tinker with the NumToSpawn parameter*/
+	TArray<UStaticMeshComponent*> SM_Outside_Array;
+	TArray<UStaticMeshComponent*> SM_Inside_Array;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;	
-
 	virtual void InteractWithMe() override;
 	virtual void InteractSetSwichObjectPossiton(float Z) override;
 	virtual void ShowInteractionWidget() override;
 	virtual void HideInteractionWidget() override;
-
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 
 

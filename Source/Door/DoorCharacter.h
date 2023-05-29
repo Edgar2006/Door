@@ -10,6 +10,7 @@
 #include <Components/BoxComponent.h>
 #include "Engine/Engine.h"
 #include <Net/UnrealNetwork.h>
+#include "DrawDebugHelpers.h"
 #include "DoorCharacter.generated.h"
 
 class UInputComponent;
@@ -109,5 +110,24 @@ private:
 	UFUNCTION()
 		void OnBoxOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-};
 
+public:
+	UPROPERTY(EditAnywhere)
+		UPrimitiveComponent* ElevatorButtonComponent = nullptr;
+	UPROPERTY(EditAnywhere)
+		UMaterialInterface* MaterialOne;
+	UPROPERTY(EditAnywhere)
+		UMaterialInterface* MaterialTwo;
+	UPROPERTY(EditAnywhere)
+		UMaterialInterface* MaterialThree;
+	UPROPERTY(EditAnywhere)
+		UMaterialInterface* MaterialFour;
+	UPROPERTY(EditAnywhere)
+		UMaterialInstance* MaterialInstance;
+	UPROPERTY(EditAnywhere)
+		bool bChooseOne = true;
+	UFUNCTION()
+		bool CheckIfElevatorButtonComponent(FString v);
+	UFUNCTION()
+		void Interact();
+};
