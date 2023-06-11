@@ -34,11 +34,12 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-	FTimeline CurveTimelineElvator;
-	FTimeline CurveTimelineOpen;
-	FKeyHandle first;
-	FKeyHandle second;
+	UPROPERTY(Replicated)
+		FTimeline CurveTimelineElvator;
+	UPROPERTY(Replicated)
+		FTimeline CurveTimelineOpen;
+		FKeyHandle first;
+		FKeyHandle second;
 
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		UCurveFloat* CurveFloatOpen;
@@ -48,9 +49,9 @@ protected:
 		FRotator StartLocDoorOpening;
 	UPROPERTY()
 		FRotator EndLocDoorOpening;
-	UPROPERTY()
+	UPROPERTY(Replicated)
 		FVector StartLocElvator;
-	UPROPERTY()
+	UPROPERTY(Replicated)
 		FVector EndLocElvator;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		float ZOffset;
@@ -64,12 +65,11 @@ protected:
 		UStaticMeshComponent* ElvatorMesh;
 	UPROPERTY(EditAnywhere)
 		UWidgetComponent* InteractionWidget;
-
 	UPROPERTY(ReplicatedUsing = OnRep_ServerOpenDoor)
 		bool BoolOpenDoor;
-	UPROPERTY(ReplicatedUsing = OnRep_ServerElvetor)
+	UPROPERTY(Replicated)
 		bool AnimationDoneCheck;
-	UPROPERTY(ReplicatedUsing = OnRep_ServerElvetor)
+	UPROPERTY(Replicated)
 		bool NextCustBool;
 	UFUNCTION()
 		void OnRep_ServerOpenDoor();
@@ -105,6 +105,10 @@ protected:
 
 	/*The max x of the location vector that the static mesh will be spawned*/
 	UPROPERTY(EditAnywhere, Category = "Construction")
+		int32 XCol;
+	UPROPERTY(EditAnywhere, Category = "Construction")
+		int32 YCol;
+	UPROPERTY(EditAnywhere, Category = "Construction")
 		float XThreshold;
 
 	/*The max y of the location vector that the static mesh will be spawned*/
@@ -125,7 +129,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;	
 	virtual void InteractWithMe() override;
-	virtual void InteractSetSwichObjectPossiton(float Z) override;
+	virtual void InteractSetSwichObjectPossiton(float z, bool ifOustside) override;
 	virtual void ShowInteractionWidget() override;
 	virtual void HideInteractionWidget() override;
 	virtual void OnConstruction(const FTransform& Transform) override;

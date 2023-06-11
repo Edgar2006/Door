@@ -186,15 +186,11 @@ void ADoorCharacter::Interact()
 {
 	if (HasAuthority()) {
 		if (CheckIfElevatorButtonComponent(ElevatorButtonComponent->GetName())) {
-			ZPositionElvatorDoorMesh = FCString::Atoi(*ElevatorButtonComponent->GetName()) * 100;
+			ZPositionElvatorDoorMesh = FCString::Atoi(*ElevatorButtonComponent->GetName());
+			Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh, 1);
 		}
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, ElevatorButtonComponent->GetName());
-		Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh);
-		if (ElevatorButtonComponent->GetMaterial(0) == MaterialFour) {
-			ElevatorButtonComponent->SetMaterial(0, MaterialTwo);
-		}	
 		else {
-			ElevatorButtonComponent->SetMaterial(0, MaterialThree);
+			Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh,0);
 		}
 	}
 	else {
@@ -206,6 +202,12 @@ void ADoorCharacter::Interact()
 
 void ADoorCharacter::OnInteract() {
 	if (Interface) {
+		if (ElevatorButtonComponent->GetMaterial(0) == MaterialFour) {
+			ElevatorButtonComponent->SetMaterial(0, MaterialTwo);
+		}
+		else {
+			ElevatorButtonComponent->SetMaterial(0, MaterialThree);
+		}
 		Interact();
 	}
 	else {
@@ -231,6 +233,12 @@ void ADoorCharacter::OnInteract() {
 			if (Interface)
 			{
 				ElevatorButtonComponent = OutHitResult.GetComponent();
+				if (ElevatorButtonComponent->GetMaterial(0) == MaterialFour) {
+					ElevatorButtonComponent->SetMaterial(0, MaterialTwo);
+				}
+				else {
+					ElevatorButtonComponent->SetMaterial(0, MaterialThree);
+				}
 				Interact();
 			}
 		}

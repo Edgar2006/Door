@@ -96,6 +96,10 @@ void AMyTimelineCurve::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AMyTimelineCurve, BoolOpenDoor);
 	DOREPLIFETIME(AMyTimelineCurve, AnimationDoneCheck);
 	DOREPLIFETIME(AMyTimelineCurve, NextCustBool);
+	DOREPLIFETIME(AMyTimelineCurve, CurveTimelineOpen);
+	DOREPLIFETIME(AMyTimelineCurve, CurveTimelineElvator);
+	DOREPLIFETIME(AMyTimelineCurve, EndLocElvator);
+	DOREPLIFETIME(AMyTimelineCurve, StartLocElvator);
 
 }
 void AMyTimelineCurve::Outside()
@@ -168,14 +172,16 @@ void AMyTimelineCurve::Inside()
 	RegisterAllComponents();
 	//The base name for all our components
 	FName InitialName = FName("MyCompName1");
-
-	for (int32 i = 0; i < NumToSpawn; i++)
+	int32 spawnCount = 0;
+	for (int32 i = 0; i < XCol; i++)
 	{
-		
-
-		for (int32 j = 0; j < NumToSpawn; j++)
+		for (int32 j = 0; j < YCol; j++)
 		{
-			FString Str = FString::FromInt((i * NumToSpawn) + j);
+			spawnCount++;
+			if (spawnCount >= NumToSpawn) {
+				break;
+			}
+			FString Str = FString::FromInt((i * XCol) + j);
 			FName q = FName(Str);
 
 			UStaticMeshComponent* NewComp = NewObject<UStaticMeshComponent>(this, q);
@@ -202,7 +208,7 @@ void AMyTimelineCurve::Inside()
 				NewComp->SetRelativeScale3D(v->GetRelativeScale3D());
 				NewComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 				NewComp->SetCollisionObjectType(v->GetCollisionObjectType());
-
+				NewComp->SetIsReplicated(1);
 				//Set a random location based on the values we enter through the editor
 				FVector Location = v->GetComponentLocation();
 					
@@ -240,7 +246,6 @@ void AMyTimelineCurve::InteractWithMe()
 	BoolOpenDoor = !BoolOpenDoor;
 	OnRep_ServerOpenDoor();
 }
-
 void AMyTimelineCurve::OnRep_ServerElvetor()
 {
 	if (!AnimationDoneCheck) {
@@ -258,14 +263,17 @@ void AMyTimelineCurve::OnRep_ServerElvetor()
 
 
 
-void AMyTimelineCurve::InteractSetSwichObjectPossiton(float z)
+void AMyTimelineCurve::InteractSetSwichObjectPossiton(float z, bool ifOustside)
 {
-	if (NextCustBool) {
+	if (NextCustBool){
 		NextCustBool = 0;
-		EndLocElvator.Z = z - 200;
+		if (ifOustside) {
+			z *= XThreshold;
+		}
+		EndLocElvator.Z = z - 100;
 		CurveFloatOpen->GetCurves().GetData()->CurveToEdit->SetKeyTime(second, FMath::Abs((StartLocElvator.Z - EndLocElvator.Z)) / 200);
 
-		if (FMath::Abs(StartLocElvator.Z - EndLocElvator.Z) < 200) {
+		if (FMath::Abs(StartLocElvator.Z - EndLocElvator.Z) < 100) {
 			AnimationDoneCheck = false;
 		}
 		else {
