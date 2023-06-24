@@ -33,17 +33,9 @@ ADoorCharacter::ADoorCharacter()
 	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
 	Mesh1P->bCastDynamicShadow = false;
 	Mesh1P->CastShadow = false;
-	//Mesh1P->SetRelativeRotation(FRotator(0.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
 
-	InteractionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Interaction box"));
-	InteractionBox->SetBoxExtent(FVector(120, 32, 32));
-	InteractionBox->SetupAttachment(FirstPersonCameraComponent);
-
-	FVector CurrentLocation = InteractionBox->GetRelativeTransform().GetLocation();
-	CurrentLocation.X += 100;
-	InteractionBox->GetRelativeTransform().SetLocation(CurrentLocation);
 	MaterialOne = CreateDefaultSubobject<UMaterialInterface>("MaterialOne");
 	MaterialTwo = CreateDefaultSubobject<UMaterialInterface>("MaterialTwo");
 	MaterialThree = CreateDefaultSubobject<UMaterialInterface>("MaterialThree");
@@ -64,9 +56,6 @@ void ADoorCharacter::BeginPlay()
 		}
 	}
 
-
-	InteractionBox->OnComponentBeginOverlap.AddDynamic(this, &ADoorCharacter::OnBoxBeginOverlap);
-	InteractionBox->OnComponentEndOverlap.AddDynamic(this, &ADoorCharacter::OnBoxOverlapEnd);
 }
 void ADoorCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -86,8 +75,6 @@ void ADoorCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ADoorCharacter::OnInteract);
 }
-
-
 void ADoorCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -122,80 +109,46 @@ bool ADoorCharacter::GetHasRifle()
 }
 
 
-
-
-void ADoorCharacter::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	//TArray<UPrimitiveComponent*> AllComponent;
-	//OverlappedComponent->GetOverlappingComponents(AllComponent);
-	//UPrimitiveComponent* min = AllComponent[0];
-	//for (UPrimitiveComponent* i : AllComponent) {
-	//	if ((min->GetRelativeLocation() - OverlappedComponent->GetRelativeLocation()).Size() < (i->GetRelativeLocation() - OverlappedComponent->GetRelativeLocation()).Size()) {
-	//		min = i;
-	//	}
-	//}
-	//OtherComp = min;
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, OtherComp->GetName());
-	ElevatorButtonComponent = OtherComp;
-	if (OtherComp->GetMaterial(0) == MaterialThree) {
-		OtherComp->SetMaterial(0, MaterialFour);
-	}
-	else {
-		OtherComp->SetMaterial(0, MaterialOne);
-		bChooseOne = !bChooseOne;
-	}
-	if (Interface) {
-		Interface->HideInteractionWidget();
-	}
-	
-	Interface = Cast<IInteractionInterface>(OtherActor);
-	if (Interface) {
-		ZPositionElvatorDoorMesh = OtherComp->GetComponentLocation().Z;
-		Interface->ShowInteractionWidget();
-	}
-
-}
-
-void ADoorCharacter::OnBoxOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	if (OtherComp->GetMaterial(0) == MaterialOne) {
-		OtherComp->SetMaterial(0, MaterialTwo);
-		bChooseOne = !bChooseOne;
-	}
-	if (OtherComp->GetMaterial(0) == MaterialFour) {
-		OtherComp->SetMaterial(0, MaterialThree);
-	}
-	if (Interface) {
-		Interface->HideInteractionWidget();
-		Interface = nullptr;
-	}
-}
-
-bool ADoorCharacter::CheckIfElevatorButtonComponent(FString v)
-{
-	bool b = 0;
-	for (int i = 0; i < v.Len(); i++) {
-		if (v[i] - '0' < 0 || v[i] - '0' > 9) {
-			return false;
-		}
-	}
-	return true;
-}
-
 void ADoorCharacter::Interact()
 {
 	if (HasAuthority()) {
-		if (CheckIfElevatorButtonComponent(ElevatorButtonComponent->GetName())) {
-			ZPositionElvatorDoorMesh = FCString::Atoi(*ElevatorButtonComponent->GetName());
-			Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh, 1);
-		}
-		else {
-			Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh,0);
+		Interface->InteractSetSwichObjectPossiton(ZPositionElvatorDoorMesh);	
+	}
+	else {
+		Server_Interact();
+	}
+}
+
+void ADoorCharacter::LineTrace()
+{
+	float LengthOfTrace = 400.f;
+	FVector StartLocation;
+	FVector EndLocation;
+	StartLocation = FirstPersonCameraComponent->GetComponentLocation();
+	EndLocation = StartLocation + (FirstPersonCameraComponent->GetForwardVector() * LengthOfTrace);
+	FHitResult OutHitResult;
+	FCollisionQueryParams LineTraceParams;
+	LineTraceParams.AddIgnoredActor(this);
+	DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Green, false, 0.01f, 0, 1);
+
+	bool bHitSomething = GetWorld()->LineTraceSingleByChannel(OutHitResult, StartLocation, EndLocation, ECC_Visibility, LineTraceParams);
+	if (bHitSomething)
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("This is an on screen message!"));
+		Interface = Cast<IInteractionInterface>(OutHitResult.GetActor());
+		if (Interface)
+		{
+			ElevatorButtonComponent = OutHitResult.GetComponent();
+			if (ElevatorButtonComponent->GetMaterial(0) == MaterialFour) {
+				ElevatorButtonComponent->SetMaterial(0, MaterialTwo);
+			}
+			else {
+				ElevatorButtonComponent->SetMaterial(0, MaterialThree);
+			}
 		}
 	}
 	else {
-		// call to server
-		Server_Interact();
+		Interface = nullptr;
 	}
 }
 
@@ -208,41 +161,16 @@ void ADoorCharacter::OnInteract() {
 		else {
 			ElevatorButtonComponent->SetMaterial(0, MaterialThree);
 		}
+		ZPositionElvatorDoorMesh = ElevatorButtonComponent->GetName();
 		Interact();
 	}
-	else {
-		float LengthOfTrace = 100.f;
+	
+}
 
-		FVector StartLocation;
-		FVector EndLocation;
-		
-		StartLocation = FirstPersonCameraComponent->GetComponentLocation();
-
-		EndLocation = StartLocation +
-			(FirstPersonCameraComponent->GetForwardVector() * LengthOfTrace);
-
-		FHitResult OutHitResult;
-		FCollisionQueryParams LineTraceParams;
-		LineTraceParams.AddIgnoredActor(this);
-		DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Green, false, 1, 0, 1);
-
-		bool bHitSomething = GetWorld()->LineTraceSingleByChannel(OutHitResult,StartLocation, EndLocation, ECC_Visibility, LineTraceParams);
-		if (bHitSomething)
-		{
-			Interface = Cast<IInteractionInterface>(OutHitResult.GetActor());
-			if (Interface)
-			{
-				ElevatorButtonComponent = OutHitResult.GetComponent();
-				if (ElevatorButtonComponent->GetMaterial(0) == MaterialFour) {
-					ElevatorButtonComponent->SetMaterial(0, MaterialTwo);
-				}
-				else {
-					ElevatorButtonComponent->SetMaterial(0, MaterialThree);
-				}
-				Interact();
-			}
-		}
-	}
+void ADoorCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	LineTrace();
 }
 
 

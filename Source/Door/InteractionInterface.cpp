@@ -9,14 +9,6 @@ void IInteractionInterface::InteractWithMe()
 {
 }
 
-void IInteractionInterface::InteractSetSwichObjectPossiton(float z, bool ifOustside)
-{
-}
-
-void IInteractionInterface::ShowInteractionWidget()
-{
-}
-
-void IInteractionInterface::HideInteractionWidget()
+void IInteractionInterface::InteractSetSwichObjectPossiton(FString ComponentName)
 {
 }

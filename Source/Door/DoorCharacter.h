@@ -89,29 +89,27 @@ public:
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 private:
-	UPROPERTY(EditAnywhere)
-		UBoxComponent* InteractionBox;
-	//UPROPERTY()
+
+
 	IInteractionInterface* Interface = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	float ZPositionElvatorDoorMesh;
+	FString ZPositionElvatorDoorMesh;
 
-	IInteractionInterface* SecondInterface = nullptr;
-	
+
 	void OnInteract();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 		void Server_Interact();
 
 
-	UFUNCTION()
-		void OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-		void OnBoxOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 
 public:
+	virtual void Tick(float DeltaTime) override;
+
+
+
 	UPROPERTY(EditAnywhere)
 		UPrimitiveComponent* ElevatorButtonComponent = nullptr;
 	UPROPERTY(EditAnywhere)
@@ -127,7 +125,8 @@ public:
 	UPROPERTY(EditAnywhere)
 		bool bChooseOne = true;
 	UFUNCTION()
-		bool CheckIfElevatorButtonComponent(FString v);
-	UFUNCTION()
 		void Interact();
+	UFUNCTION()
+		void LineTrace();
+
 };

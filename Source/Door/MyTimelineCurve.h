@@ -45,26 +45,24 @@ protected:
 		UCurveFloat* CurveFloatOpen;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		UCurveFloat* CurveFloatClose;
-	UPROPERTY()
-		FRotator StartLocDoorOpening;
-	UPROPERTY()
-		FRotator EndLocDoorOpening;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline", Meta = (MakeEditWidget = true))
+		FVector StartLocDoorOpening;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline", Meta = (MakeEditWidget = true))
+		FVector EndLocDoorOpening;
 	UPROPERTY(Replicated)
 		FVector StartLocElvator;
 	UPROPERTY(Replicated)
 		FVector EndLocElvator;
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-		float ZOffset;
 	UPROPERTY(EditAnywhere)
 		USceneComponent* _RootComponent;
 	UPROPERTY(EditAnywhere)
 		USceneComponent* ElvetorPosition;
 	UPROPERTY(EditAnywhere)
-		UStaticMeshComponent* ElvatorDoorMesh;
+		UStaticMeshComponent* ElvatorDoorMeshLeft;
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* ElvatorDoorMeshRight;
 	UPROPERTY(EditAnywhere)
 		UStaticMeshComponent* ElvatorMesh;
-	UPROPERTY(EditAnywhere)
-		UWidgetComponent* InteractionWidget;
 	UPROPERTY(ReplicatedUsing = OnRep_ServerOpenDoor)
 		bool BoolOpenDoor;
 	UPROPERTY(Replicated)
@@ -82,23 +80,24 @@ protected:
 
 
 
-
 	UFUNCTION()
 		void Outside();
 	UFUNCTION()
 		void Inside();
-
-
-
-	/*The static mesh of our actor*/
-	UPROPERTY(EditAnywhere)
-		UStaticMeshComponent* SM_Outside;
-
+	UFUNCTION()
+		bool CheckIfButton(FString str);
+	UFUNCTION()
+		int GetButtonNumber(FString str);
 
 	/*The static mesh of our actor*/
 	UPROPERTY(EditAnywhere)
-		UStaticMeshComponent* v;
-
+		UStaticMeshComponent* SM_OutsideMeshUp;
+	/*The static mesh of our actor*/
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* SM_OutsideMeshDown;
+	/*The static mesh of our actor*/
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* SM_Inside;
 
 	/*The random location of our component will get generated based on
 	a given X and Y from within our editor.*/
@@ -115,6 +114,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Construction")
 		float YThreshold;
 
+	UPROPERTY(EditAnywhere, Category = "Construction")
+		float ZThreshold;
+
 	/*The number of meshes/components that will get spawned*/
 	UPROPERTY(EditAnywhere, Category = "Construction")
 		int32 NumToSpawn;	
@@ -129,9 +131,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;	
 	virtual void InteractWithMe() override;
-	virtual void InteractSetSwichObjectPossiton(float z, bool ifOustside) override;
-	virtual void ShowInteractionWidget() override;
-	virtual void HideInteractionWidget() override;
+	virtual void InteractSetSwichObjectPossiton(FString ComponentName) override;
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 

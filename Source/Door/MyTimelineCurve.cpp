@@ -14,29 +14,32 @@ AMyTimelineCurve::AMyTimelineCurve()
 	RootComponent = _RootComponent;
 	ElvatorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Elevator mesh"));
 	ElvatorMesh->SetupAttachment(RootComponent);
-	ElvatorDoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Elevator door mesh"));
-	ElvatorDoorMesh->SetupAttachment(ElvatorMesh);
-	InteractionWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Interaction widget"));
-	InteractionWidget->SetupAttachment(RootComponent);
+	ElvatorDoorMeshLeft = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Elevator door mesh Left"));
+	ElvatorDoorMeshLeft->SetupAttachment(ElvatorMesh);
+	ElvatorDoorMeshRight = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Elevator door mesh Right"));
+	ElvatorDoorMeshRight->SetupAttachment(ElvatorMesh);
 	ElvetorPosition = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	ElvetorPosition->SetupAttachment(ElvatorMesh);
 	//Create a Static Mesh for our Actor
-	SM_Outside = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	SM_Outside->SetupAttachment(RootComponent);
-	v = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Stati"));
-	v->SetupAttachment(ElvatorMesh);
+	SM_OutsideMeshUp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TAG_Button_OU_0"));
+	SM_OutsideMeshUp->SetupAttachment(RootComponent);
+	SM_OutsideMeshDown = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TAG_Button_OD_0"));
+	SM_OutsideMeshDown->SetupAttachment(RootComponent);
+	SM_Inside = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TAG_Button_IN_0"));
+	SM_Inside->SetupAttachment(ElvatorMesh);
 	bReplicates = true;
 }
-
+ 
 void AMyTimelineCurve::TimelineProgressDoor(float Value)
 {
-	FRotator NewLocation = FMath::Lerp(StartLocDoorOpening, EndLocDoorOpening, Value);
-	ElvatorDoorMesh->SetRelativeRotation(NewLocation);
+	FVector NewLocation = FMath::Lerp(StartLocDoorOpening, EndLocDoorOpening, Value);
+	ElvatorDoorMeshLeft->SetRelativeLocation(NewLocation);
+	NewLocation *= -1;
+	ElvatorDoorMeshRight->SetRelativeLocation(NewLocation);
 }
 void AMyTimelineCurve::TimelineProgress_Up_Down(float Value)
 {
 	FVector NewLocation = FMath::Lerp(StartLocElvator, EndLocElvator, Value);
-	FString a = FString::SanitizeFloat(NewLocation.Z);
 	ElvatorMesh->SetWorldLocation(NewLocation);
 }
 void AMyTimelineCurve::TimelineProgressDoorFinishedCallback()
@@ -77,11 +80,8 @@ void AMyTimelineCurve::BeginPlay()
 		TimelineProgress_Up_DownFinishedCallback.BindUFunction(this, FName{ TEXT("TimelineProgress_Up_DownFinishedCallback") });
 		CurveTimelineElvator.AddInterpFloat(CurveFloatOpen, TimelineProgress_Up_Down);
 		CurveTimelineElvator.SetTimelineFinishedFunc(TimelineProgress_Up_DownFinishedCallback);
-		StartLocDoorOpening = EndLocDoorOpening = GetActorRotation();
-		EndLocDoorOpening.Yaw += ZOffset;
 		StartLocElvator = EndLocElvator = ElvetorPosition->GetComponentLocation();
 	}
-	InteractionWidget->SetVisibility(false);
 }
 void AMyTimelineCurve::Tick(float DeltaTime)
 {
@@ -102,13 +102,12 @@ void AMyTimelineCurve::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AMyTimelineCurve, StartLocElvator);
 
 }
+
+
 void AMyTimelineCurve::Outside()
 {
 	//Empty the array and delete all it's components
-	for (auto It = SM_Outside_Array.CreateIterator(); It; It++)
-	{
-		(*It)->DestroyComponent();
-	}
+
 
 	SM_Outside_Array.Empty();
 
@@ -116,114 +115,115 @@ void AMyTimelineCurve::Outside()
 	RegisterAllComponents();
 	//The base name for all our components
 	FName InitialName = FName("MyCompName");
+	FName InitialName1 = FName("MyCompName1");
 
 	for (int32 i = 0; i < NumToSpawn; i++)
 	{
-		//Create a new Component
-		//The first parameter is the "parent" of the our new component
 		UStaticMeshComponent* NewComp = NewObject<UStaticMeshComponent>(this, InitialName);
-
-		//Add a reference to our array
 		SM_Outside_Array.Add(NewComp);
-
-		//Change the name for the next possible item
-		FString Str = "MyCompName" + FString::FromInt(i + 1);
-
-		//Convert the FString to FName
+		FString Str = "TAG_Button_UP_" + FString::FromInt(i + 1);
 		InitialName = (*Str);
-
-		//If the component is valid, set it's static mesh, relative location and attach it to our parent
 		if (NewComp)
 		{
-			GLog->Log("Registering comp...");
-
-			//Register the new component
-			NewComp->RegisterComponent();
-
-			//Set the static mesh of our component
-			NewComp->SetStaticMesh(SM_Outside->GetStaticMesh());
-			NewComp->SetRelativeScale3D(SM_Outside->GetRelativeScale3D());
-			NewComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
-			NewComp->SetCollisionObjectType(SM_Outside->GetCollisionObjectType());
-
-			//Set a random location based on the values we enter through the editor
-			FVector Location = SM_Outside->GetComponentLocation();
-
-			Location.Z += (i + 1) * XThreshold;
-
-			NewComp->SetWorldLocation(Location);
-			//NewComp->SetupAttachment(ElvatorMesh);
-
-
+			if (SM_OutsideMeshUp != nullptr) {
+				NewComp->RegisterComponent();
+				//Set the static mesh of our component
+				NewComp->SetStaticMesh(SM_OutsideMeshUp->GetStaticMesh());
+				NewComp->SetRelativeScale3D(SM_OutsideMeshUp->GetRelativeScale3D());
+				NewComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+				NewComp->SetCollisionObjectType(SM_OutsideMeshUp->GetCollisionObjectType());
+				//Set a location based on the values we enter through the editor
+				FVector Location = SM_OutsideMeshUp->GetComponentLocation();
+				Location.Z += i * XThreshold;
+				NewComp->SetWorldLocation(Location);
+			}
 		}
+		UStaticMeshComponent* NewComp1 = NewObject<UStaticMeshComponent>(this, InitialName1);
+		SM_Outside_Array.Add(NewComp1);
+		FString Str1 = "TAG_Button_UD_" + FString::FromInt(i + 1);
+		InitialName1 = (*Str1);
+		if (NewComp1)
+		{
+			if (SM_OutsideMeshDown != nullptr) {
+				NewComp1->RegisterComponent();
+				//Set the static mesh of our component
+				NewComp1->SetStaticMesh(SM_OutsideMeshDown->GetStaticMesh());
+				NewComp1->SetRelativeScale3D(SM_OutsideMeshDown->GetRelativeScale3D());
+				NewComp1->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+				NewComp1->SetCollisionObjectType(SM_OutsideMeshDown->GetCollisionObjectType());
+				//Set a location based on the values we enter through the editor
+				FVector Location1 = SM_OutsideMeshDown->GetComponentLocation();
+				Location1.Z += i * XThreshold;
+				NewComp1->SetWorldLocation(Location1);
+			}
+		}
+		if (i == 0) {
+			NewComp1->DestroyComponent();
+		}
+
 	}
 }
 void AMyTimelineCurve::Inside()
 {
-	//Empty the array and delete all it's components
-	for (auto It = SM_Inside_Array.CreateIterator(); It; It++)
+	for (auto& i : SM_Inside_Array)
 	{
-		(*It)->DestroyComponent();
+		i->DestroyComponent();
 	}
-
 	SM_Inside_Array.Empty();
 
 	//Register all the components
 	RegisterAllComponents();
 	//The base name for all our components
-	FName InitialName = FName("MyCompName1");
 	int32 spawnCount = 0;
 	for (int32 i = 0; i < XCol; i++)
 	{
 		for (int32 j = 0; j < YCol; j++)
 		{
 			spawnCount++;
-			if (spawnCount >= NumToSpawn) {
+			if (spawnCount == 1) {
+				continue;
+			}
+			if (spawnCount > NumToSpawn) {
 				break;
 			}
-			FString Str = FString::FromInt((i * XCol) + j);
-			FName q = FName(Str);
 
-			UStaticMeshComponent* NewComp = NewObject<UStaticMeshComponent>(this, q);
+			FString Str = "TAG_Button_IN_" + FString::FromInt(spawnCount - 1);
+			FName name = FName(Str);
+
+			UStaticMeshComponent* NewComp = NewObject<UStaticMeshComponent>(this, name);
 
 			//Add a reference to our array
 			SM_Inside_Array.Add(NewComp);
 
-			//Change the name for the next possible item
-
-			//Convert the FString to FName
-			InitialName = (*Str);
-
 			//If the component is valid, set it's static mesh, relative location and attach it to our parent
 			if (NewComp)
 			{
-				GLog->Log("Registering comp1...");
+				if (SM_Inside != nullptr) {
+					//Register the new component
+					NewComp->RegisterComponent();
 
-				//Register the new component
-				NewComp->RegisterComponent();
+					//Set the static mesh of our component
 
-				//Set the static mesh of our component
+					NewComp->SetStaticMesh(SM_Inside->GetStaticMesh());
+					NewComp->SetRelativeScale3D(SM_Inside->GetRelativeScale3D());
+					NewComp->SetRelativeRotation(SM_Inside->GetRelativeRotation());
+					NewComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+					NewComp->SetCollisionObjectType(SM_Inside->GetCollisionObjectType());
+					NewComp->SetIsReplicated(1);
+					//Set a random location based on the values we enter through the editor
+					FVector Location = SM_Inside->GetComponentLocation();
 
-				NewComp->SetStaticMesh(v->GetStaticMesh());
-				NewComp->SetRelativeScale3D(v->GetRelativeScale3D());
-				NewComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-				NewComp->SetCollisionObjectType(v->GetCollisionObjectType());
-				NewComp->SetIsReplicated(1);
-				//Set a random location based on the values we enter through the editor
-				FVector Location = v->GetComponentLocation();
-					
-				Location.X += (i + 1) * YThreshold;
-				Location.Z += (j + 1) * YThreshold;
+					Location.Y += i * YThreshold;
+					Location.Z += j * ZThreshold;
 
-				NewComp->SetWorldLocation(Location);
-				NewComp->AttachToComponent(ElvatorMesh, FAttachmentTransformRules::KeepWorldTransform);
-
-				//Attach the component to the root component
-				//NewComp->SetupAttachment(ElvatorMesh);
+					NewComp->SetRelativeLocation(Location);
+					NewComp->AttachToComponent(ElvatorMesh, FAttachmentTransformRules::KeepWorldTransform);
+				}
 			}
 		}
 	}
 }
+
 void AMyTimelineCurve::OnConstruction(const FTransform& Transform)
 {
 	Outside();
@@ -262,15 +262,36 @@ void AMyTimelineCurve::OnRep_ServerElvetor()
 }
 
 
-
-void AMyTimelineCurve::InteractSetSwichObjectPossiton(float z, bool ifOustside)
+bool AMyTimelineCurve::CheckIfButton(FString str)
 {
-	if (NextCustBool){
-		NextCustBool = 0;
-		if (ifOustside) {
-			z *= XThreshold;
+	FString a = "TAG_Button_";//need equal a elevator script 
+	if (str.Len() > a.Len() + 3) {
+		for (int i = 0; i < a.Len(); i++) {
+			if (str[i] != a[i]) {
+				return false;
+			}
 		}
-		EndLocElvator.Z = z - 100;
+	}
+	return true;
+}
+
+int AMyTimelineCurve::GetButtonNumber(FString str)
+{
+	FString a = "TAG_Button_II_";//need equal a elevator script 
+	FString num = "";
+	for (int i = a.Len(); i < str.Len(); i++) {
+		num += str[i];
+	}
+	return (FCString::Atoi(*num) * XThreshold);
+}
+
+void AMyTimelineCurve::InteractSetSwichObjectPossiton(FString ComponentName)
+{
+	if (NextCustBool && CheckIfButton(ComponentName)){
+		GEngine->AddOnScreenDebugMessage(-1, 1.1f, FColor::Red, ComponentName);
+		NextCustBool = 0;
+		EndLocElvator.Z = GetButtonNumber(ComponentName);
+
 		CurveFloatOpen->GetCurves().GetData()->CurveToEdit->SetKeyTime(second, FMath::Abs((StartLocElvator.Z - EndLocElvator.Z)) / 200);
 
 		if (FMath::Abs(StartLocElvator.Z - EndLocElvator.Z) < 100) {
@@ -288,27 +309,6 @@ void AMyTimelineCurve::InteractSetSwichObjectPossiton(float z, bool ifOustside)
 	}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-void AMyTimelineCurve::ShowInteractionWidget()
-{
-	InteractionWidget->SetVisibility(true);
-}
-
-void AMyTimelineCurve::HideInteractionWidget()
-{
-	InteractionWidget->SetVisibility(false);
-}
 
 
 
