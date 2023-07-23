@@ -112,16 +112,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		UPrimitiveComponent* ElevatorButtonComponent = nullptr;
-	UPROPERTY(EditAnywhere)
-		UMaterialInterface* MaterialOne;
-	UPROPERTY(EditAnywhere)
-		UMaterialInterface* MaterialTwo;
-	UPROPERTY(EditAnywhere)
-		UMaterialInterface* MaterialThree;
-	UPROPERTY(EditAnywhere)
-		UMaterialInterface* MaterialFour;
-	UPROPERTY(EditAnywhere)
-		UMaterialInstance* MaterialInstance;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool isInteractTextShow;
 	UPROPERTY(EditAnywhere)
 		bool bChooseOne = true;
 	UFUNCTION()

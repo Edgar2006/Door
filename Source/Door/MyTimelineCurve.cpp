@@ -106,17 +106,19 @@ void AMyTimelineCurve::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void AMyTimelineCurve::Outside()
 {
-	//Empty the array and delete all it's components
-
+	for (auto It = SM_Outside_Array.CreateIterator(); It; It++)
+	{
+		(*It)->DestroyComponent();
+	}
 
 	SM_Outside_Array.Empty();
 
 	//Register all the components
 	RegisterAllComponents();
 	//The base name for all our components
+
 	FName InitialName = FName("MyCompName");
 	FName InitialName1 = FName("MyCompName1");
-
 	for (int32 i = 0; i < NumToSpawn; i++)
 	{
 		UStaticMeshComponent* NewComp = NewObject<UStaticMeshComponent>(this, InitialName);
@@ -127,12 +129,10 @@ void AMyTimelineCurve::Outside()
 		{
 			if (SM_OutsideMeshUp != nullptr) {
 				NewComp->RegisterComponent();
-				//Set the static mesh of our component
 				NewComp->SetStaticMesh(SM_OutsideMeshUp->GetStaticMesh());
 				NewComp->SetRelativeScale3D(SM_OutsideMeshUp->GetRelativeScale3D());
 				NewComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 				NewComp->SetCollisionObjectType(SM_OutsideMeshUp->GetCollisionObjectType());
-				//Set a location based on the values we enter through the editor
 				FVector Location = SM_OutsideMeshUp->GetComponentLocation();
 				Location.Z += i * XThreshold;
 				NewComp->SetWorldLocation(Location);
@@ -146,21 +146,18 @@ void AMyTimelineCurve::Outside()
 		{
 			if (SM_OutsideMeshDown != nullptr) {
 				NewComp1->RegisterComponent();
-				//Set the static mesh of our component
 				NewComp1->SetStaticMesh(SM_OutsideMeshDown->GetStaticMesh());
 				NewComp1->SetRelativeScale3D(SM_OutsideMeshDown->GetRelativeScale3D());
 				NewComp1->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 				NewComp1->SetCollisionObjectType(SM_OutsideMeshDown->GetCollisionObjectType());
-				//Set a location based on the values we enter through the editor
 				FVector Location1 = SM_OutsideMeshDown->GetComponentLocation();
 				Location1.Z += i * XThreshold;
 				NewComp1->SetWorldLocation(Location1);
 			}
 		}
-		if (i == 0) {
+	/*	if (i == 0) {
 			NewComp1->DestroyComponent();
-		}
-
+		}*/
 	}
 }
 void AMyTimelineCurve::Inside()
@@ -170,10 +167,7 @@ void AMyTimelineCurve::Inside()
 		i->DestroyComponent();
 	}
 	SM_Inside_Array.Empty();
-
-	//Register all the components
 	RegisterAllComponents();
-	//The base name for all our components
 	int32 spawnCount = 0;
 	for (int32 i = 0; i < XCol; i++)
 	{
@@ -186,36 +180,24 @@ void AMyTimelineCurve::Inside()
 			if (spawnCount > NumToSpawn) {
 				break;
 			}
-
 			FString Str = "TAG_Button_IN_" + FString::FromInt(spawnCount - 1);
 			FName name = FName(Str);
-
 			UStaticMeshComponent* NewComp = NewObject<UStaticMeshComponent>(this, name);
-
-			//Add a reference to our array
 			SM_Inside_Array.Add(NewComp);
-
-			//If the component is valid, set it's static mesh, relative location and attach it to our parent
 			if (NewComp)
 			{
 				if (SM_Inside != nullptr) {
 					//Register the new component
 					NewComp->RegisterComponent();
-
-					//Set the static mesh of our component
-
 					NewComp->SetStaticMesh(SM_Inside->GetStaticMesh());
 					NewComp->SetRelativeScale3D(SM_Inside->GetRelativeScale3D());
 					NewComp->SetRelativeRotation(SM_Inside->GetRelativeRotation());
 					NewComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 					NewComp->SetCollisionObjectType(SM_Inside->GetCollisionObjectType());
 					NewComp->SetIsReplicated(1);
-					//Set a random location based on the values we enter through the editor
 					FVector Location = SM_Inside->GetComponentLocation();
-
 					Location.Y += i * YThreshold;
 					Location.Z += j * ZThreshold;
-
 					NewComp->SetRelativeLocation(Location);
 					NewComp->AttachToComponent(ElvatorMesh, FAttachmentTransformRules::KeepWorldTransform);
 				}

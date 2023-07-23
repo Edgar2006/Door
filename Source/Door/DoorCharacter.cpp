@@ -34,12 +34,6 @@ ADoorCharacter::ADoorCharacter()
 	Mesh1P->bCastDynamicShadow = false;
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
-
-
-	MaterialOne = CreateDefaultSubobject<UMaterialInterface>("MaterialOne");
-	MaterialTwo = CreateDefaultSubobject<UMaterialInterface>("MaterialTwo");
-	MaterialThree = CreateDefaultSubobject<UMaterialInterface>("MaterialThree");
-	MaterialThree = CreateDefaultSubobject<UMaterialInterface>("MaterialFour");
 }
 
 void ADoorCharacter::BeginPlay()
@@ -139,28 +133,18 @@ void ADoorCharacter::LineTrace()
 		if (Interface)
 		{
 			ElevatorButtonComponent = OutHitResult.GetComponent();
-			if (ElevatorButtonComponent->GetMaterial(0) == MaterialFour) {
-				ElevatorButtonComponent->SetMaterial(0, MaterialTwo);
-			}
-			else {
-				ElevatorButtonComponent->SetMaterial(0, MaterialThree);
-			}
+			isInteractTextShow = 1;
 		}
 	}
 	else {
 		Interface = nullptr;
+		isInteractTextShow = 0;
 	}
 }
 
 
 void ADoorCharacter::OnInteract() {
 	if (Interface) {
-		if (ElevatorButtonComponent->GetMaterial(0) == MaterialFour) {
-			ElevatorButtonComponent->SetMaterial(0, MaterialTwo);
-		}
-		else {
-			ElevatorButtonComponent->SetMaterial(0, MaterialThree);
-		}
 		ZPositionElvatorDoorMesh = ElevatorButtonComponent->GetName();
 		Interact();
 	}
