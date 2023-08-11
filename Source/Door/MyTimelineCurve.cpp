@@ -3,6 +3,8 @@
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
 #include <Net/UnrealNetwork.h>
+#include "Kismet/KismetMathLibrary.h"
+
 
 // Sets default values
 
@@ -32,11 +34,17 @@ AMyTimelineCurve::AMyTimelineCurve()
  
 void AMyTimelineCurve::TimelineProgressDoor(float Value)
 {
-	FVector NewLocation = FMath::Lerp(StartLocDoorOpening, EndLocDoorOpening, Value);
-	ElvatorDoorMeshLeft->SetRelativeLocation(NewLocation);
-	NewLocation *= -1;
-	ElvatorDoorMeshRight->SetRelativeLocation(NewLocation);
+	FTransform NewLocation;
+	NewLocation.SetLocation(FMath::Lerp(StartLocDoorOpening.GetLocation(), EndLocDoorOpening.GetLocation(), Value));
+	NewLocation.SetRotation(FMath::Lerp(StartLocDoorOpening.GetRotation(), EndLocDoorOpening.GetRotation(), Value));
+
+	ElvatorDoorMeshLeft->SetRelativeTransform(NewLocation);
+	if (!isOneDoor) {
+		NewLocation.SetLocation(NewLocation.GetLocation() * -1);
+		ElvatorDoorMeshRight->SetRelativeTransform(NewLocation);
+	}
 }
+
 void AMyTimelineCurve::TimelineProgress_Up_Down(float Value)
 {
 	FVector NewLocation = FMath::Lerp(StartLocElvator, EndLocElvator, Value);
@@ -60,6 +68,7 @@ void AMyTimelineCurve::TimelineProgress_Up_DownFinishedCallback()
 	AnimationDoneCheck = false;
 	InteractWithMe();
 }
+
 void AMyTimelineCurve::BeginPlay()
 {
 	Super::BeginPlay();
@@ -81,6 +90,13 @@ void AMyTimelineCurve::BeginPlay()
 		CurveTimelineElvator.AddInterpFloat(CurveFloatOpen, TimelineProgress_Up_Down);
 		CurveTimelineElvator.SetTimelineFinishedFunc(TimelineProgress_Up_DownFinishedCallback);
 		StartLocElvator = EndLocElvator = ElvetorPosition->GetComponentLocation();
+	}
+	if (ElvatorDoorMeshRight == nullptr) {
+		isOneDoor = 1;
+	}
+	if (ElvatorDoorMeshLeft == nullptr && !isOneDoor) {
+		ElvatorDoorMeshLeft = ElvatorDoorMeshRight;
+		isOneDoor = 1;
 	}
 }
 void AMyTimelineCurve::Tick(float DeltaTime)
@@ -196,8 +212,11 @@ void AMyTimelineCurve::Inside()
 					NewComp->SetCollisionObjectType(SM_Inside->GetCollisionObjectType());
 					NewComp->SetIsReplicated(1);
 					FVector Location = SM_Inside->GetComponentLocation();
-					Location.Y += i * YThreshold;
-					Location.Z += j * ZThreshold;
+					FRotator Rotation = SM_Inside->GetRelativeRotation();
+					FVector RightVector = UKismetMathLibrary::GetRightVector(Rotation);
+					FVector UpVector = UKismetMathLibrary::GetUpVector(Rotation);
+					Location += RightVector * (i * YThreshold);
+					Location += UpVector * (j * ZThreshold);
 					NewComp->SetRelativeLocation(Location);
 					NewComp->AttachToComponent(ElvatorMesh, FAttachmentTransformRules::KeepWorldTransform);
 				}

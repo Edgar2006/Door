@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Math/TransformNonVectorized.h"
 
 #include "InteractionInterface.h"
 #include <Components/WidgetComponent.h>
@@ -31,24 +32,22 @@ public:
 	UFUNCTION()
 		void TimelineProgress_Up_DownFinishedCallback();
 
+
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 	UPROPERTY(Replicated)
 		FTimeline CurveTimelineElvator;
 	UPROPERTY(Replicated)
 		FTimeline CurveTimelineOpen;
-		FKeyHandle first;
-		FKeyHandle second;
-
+	FKeyHandle first;
+	FKeyHandle second;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		UCurveFloat* CurveFloatOpen;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 		UCurveFloat* CurveFloatClose;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline", Meta = (MakeEditWidget = true))
-		FVector StartLocDoorOpening;
+		FTransform StartLocDoorOpening;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline", Meta = (MakeEditWidget = true))
-		FVector EndLocDoorOpening;
+		FTransform EndLocDoorOpening;
 	UPROPERTY(Replicated)
 		FVector StartLocElvator;
 	UPROPERTY(Replicated)
@@ -57,6 +56,11 @@ protected:
 		USceneComponent* _RootComponent;
 	UPROPERTY(EditAnywhere)
 		USceneComponent* ElvetorPosition;
+
+protected:
+
+	UPROPERTY(EditAnywhere)
+		bool isOneDoor;
 	UPROPERTY(EditAnywhere)
 		UStaticMeshComponent* ElvatorDoorMeshLeft;
 	UPROPERTY(EditAnywhere)
@@ -69,25 +73,8 @@ protected:
 		bool AnimationDoneCheck;
 	UPROPERTY(Replicated)
 		bool NextCustBool;
-	UFUNCTION()
-		void OnRep_ServerOpenDoor();
-	UFUNCTION()
-		void OnRep_ServerElvetor();
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-		
-
-
-
-
-	UFUNCTION()
-		void Outside();
-	UFUNCTION()
-		void Inside();
-	UFUNCTION()
-		bool CheckIfButton(FString str);
-	UFUNCTION()
-		int GetButtonNumber(FString str);
+protected:
 
 	/*The static mesh of our actor*/
 	UPROPERTY(EditAnywhere)
@@ -101,6 +88,10 @@ protected:
 
 	/*The random location of our component will get generated based on
 	a given X and Y from within our editor.*/
+
+
+protected:
+
 
 	/*The max x of the location vector that the static mesh will be spawned*/
 	UPROPERTY(EditAnywhere, Category = "Construction")
@@ -119,13 +110,32 @@ protected:
 
 	/*The number of meshes/components that will get spawned*/
 	UPROPERTY(EditAnywhere, Category = "Construction")
-		int32 NumToSpawn;	
+		int32 NumToSpawn;
 
 	/*An array containing references of the spawned components
 	This will be used in order to delete old components in case we decide to
 	tinker with the NumToSpawn parameter*/
 	TArray<UStaticMeshComponent*> SM_Outside_Array;
 	TArray<UStaticMeshComponent*> SM_Inside_Array;
+
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+	
+	UFUNCTION()
+		void OnRep_ServerOpenDoor();
+	UFUNCTION()
+		void OnRep_ServerElvetor();
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	UFUNCTION()
+		void Outside();
+	UFUNCTION()
+		void Inside();
+	UFUNCTION()
+		bool CheckIfButton(FString str);
+	UFUNCTION()
+		int GetButtonNumber(FString str);
 
 public:
 	// Called every frame
