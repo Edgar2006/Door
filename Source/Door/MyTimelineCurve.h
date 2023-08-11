@@ -75,7 +75,8 @@ protected:
 		bool NextCustBool;
 
 protected:
-
+	UPROPERTY(EditAnywhere)
+		UStaticMeshComponent* SM_OutsideMesh;
 	/*The static mesh of our actor*/
 	UPROPERTY(EditAnywhere)
 		UStaticMeshComponent* SM_OutsideMeshUp;
@@ -136,6 +137,8 @@ protected:
 		bool CheckIfButton(FString str);
 	UFUNCTION()
 		int GetButtonNumber(FString str);
+	UFUNCTION()
+		void SetMeshParametr(UStaticMeshComponent* SpawnMesh, UStaticMeshComponent* Mesh, int32 index);
 
 public:
 	// Called every frame

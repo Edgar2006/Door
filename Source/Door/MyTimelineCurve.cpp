@@ -23,6 +23,8 @@ AMyTimelineCurve::AMyTimelineCurve()
 	ElvetorPosition = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	ElvetorPosition->SetupAttachment(ElvatorMesh);
 	//Create a Static Mesh for our Actor
+	SM_OutsideMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM_OutSide_0"));
+	SM_OutsideMesh->SetupAttachment(RootComponent);
 	SM_OutsideMeshUp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TAG_Button_OU_0"));
 	SM_OutsideMeshUp->SetupAttachment(RootComponent);
 	SM_OutsideMeshDown = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TAG_Button_OD_0"));
@@ -120,6 +122,25 @@ void AMyTimelineCurve::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 }
 
 
+void AMyTimelineCurve::SetMeshParametr(UStaticMeshComponent* SpawnMesh, UStaticMeshComponent* Mesh, int32 index)
+{
+	if (SpawnMesh)
+	{
+		if (Mesh != nullptr) {
+			SpawnMesh->RegisterComponent();
+			SpawnMesh->SetStaticMesh(Mesh->GetStaticMesh());
+			SpawnMesh->SetRelativeScale3D(Mesh->GetRelativeScale3D());
+			SpawnMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+			SpawnMesh->SetCollisionObjectType(Mesh->GetCollisionObjectType());
+			FVector Location = Mesh->GetComponentLocation();
+			Location.Z += index * XThreshold;
+			SpawnMesh->SetWorldLocation(Location);
+		}
+	}
+}
+
+
+
 void AMyTimelineCurve::Outside()
 {
 	for (auto It = SM_Outside_Array.CreateIterator(); It; It++)
@@ -134,46 +155,24 @@ void AMyTimelineCurve::Outside()
 	//The base name for all our components
 
 	FName InitialName = FName("MyCompName");
-	FName InitialName1 = FName("MyCompName1");
 	for (int32 i = 0; i < NumToSpawn; i++)
 	{
-		UStaticMeshComponent* NewComp = NewObject<UStaticMeshComponent>(this, InitialName);
-		SM_Outside_Array.Add(NewComp);
+		UStaticMeshComponent* UpMesh = NewObject<UStaticMeshComponent>(this, InitialName);
+		SM_Outside_Array.Add(UpMesh);
 		FString Str = "TAG_Button_UP_" + FString::FromInt(i + 1);
 		InitialName = (*Str);
-		if (NewComp)
-		{
-			if (SM_OutsideMeshUp != nullptr) {
-				NewComp->RegisterComponent();
-				NewComp->SetStaticMesh(SM_OutsideMeshUp->GetStaticMesh());
-				NewComp->SetRelativeScale3D(SM_OutsideMeshUp->GetRelativeScale3D());
-				NewComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-				NewComp->SetCollisionObjectType(SM_OutsideMeshUp->GetCollisionObjectType());
-				FVector Location = SM_OutsideMeshUp->GetComponentLocation();
-				Location.Z += i * XThreshold;
-				NewComp->SetWorldLocation(Location);
-			}
-		}
-		UStaticMeshComponent* NewComp1 = NewObject<UStaticMeshComponent>(this, InitialName1);
-		SM_Outside_Array.Add(NewComp1);
-		FString Str1 = "TAG_Button_UD_" + FString::FromInt(i + 1);
-		InitialName1 = (*Str1);
-		if (NewComp1)
-		{
-			if (SM_OutsideMeshDown != nullptr) {
-				NewComp1->RegisterComponent();
-				NewComp1->SetStaticMesh(SM_OutsideMeshDown->GetStaticMesh());
-				NewComp1->SetRelativeScale3D(SM_OutsideMeshDown->GetRelativeScale3D());
-				NewComp1->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-				NewComp1->SetCollisionObjectType(SM_OutsideMeshDown->GetCollisionObjectType());
-				FVector Location1 = SM_OutsideMeshDown->GetComponentLocation();
-				Location1.Z += i * XThreshold;
-				NewComp1->SetWorldLocation(Location1);
-			}
-		}
-	/*	if (i == 0) {
-			NewComp1->DestroyComponent();
-		}*/
+		SetMeshParametr(UpMesh, SM_OutsideMeshUp, i);
+		UStaticMeshComponent* DownMesh = NewObject<UStaticMeshComponent>(this, InitialName);
+		SM_Outside_Array.Add(DownMesh);
+		Str = "TAG_Button_UD_" + FString::FromInt(i + 1);
+		InitialName = (*Str);
+		SetMeshParametr(DownMesh, SM_OutsideMeshDown, i);
+
+		UStaticMeshComponent* OutSideMesh = NewObject<UStaticMeshComponent>(this, InitialName);
+		SM_Outside_Array.Add(DownMesh);
+		Str = "SM_OutSide" + FString::FromInt(i + 1);
+		InitialName = (*Str);
+		SetMeshParametr(OutSideMesh, SM_OutsideMesh, i);
 	}
 }
 void AMyTimelineCurve::Inside()
